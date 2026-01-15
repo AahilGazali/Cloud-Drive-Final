@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Frontend Architecture Documentation
 
 ## Folder Structure
@@ -171,3 +172,6 @@ This architecture supports adding:
 3. **Reusability**: Services and hooks can be used across multiple components
 4. **Testability**: Each layer can be tested independently
 5. **Scalability**: Easy to add new features without refactoring existing code
+=======
+# cloud-drive-frontend
+>>>>>>> b6d9f5708be8495cacb51dbbf5477983bbf76e3e

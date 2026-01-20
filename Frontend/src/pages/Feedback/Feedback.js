@@ -4,14 +4,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
 import { feedbackService } from '../../services';
 
 const Feedback = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { t } = useLanguage();
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

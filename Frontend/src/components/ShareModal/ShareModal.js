@@ -72,6 +72,7 @@ const ShareModal = ({
     return () => {
       document.body.style.overflow = '';
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, item, user]);
 
   const loadShares = async () => {

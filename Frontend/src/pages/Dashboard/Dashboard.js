@@ -28,13 +28,11 @@ import Settings from '../Settings/Settings';
 import Feedback from '../Feedback/Feedback';
 import SearchResults from '../../components/SearchResults/SearchResults';
 import { searchService } from '../../services';
-import { filesService, foldersService, feedbackService } from '../../services';
-import { useLanguage } from '../../context/LanguageContext';
+import { filesService, feedbackService } from '../../services';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
@@ -133,6 +131,7 @@ const Dashboard = () => {
   };
 
   // Fetch recent activity for notifications
+  // eslint-disable-next-line no-unused-vars
   const fetchNotifications = async () => {
     try {
       setNotificationsLoading(true);

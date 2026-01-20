@@ -2,7 +2,7 @@
  * Toast Component - Notification system for success/error messages
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 let toastIdCounter = 0;
 

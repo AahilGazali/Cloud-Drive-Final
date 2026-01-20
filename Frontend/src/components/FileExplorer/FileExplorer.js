@@ -13,7 +13,7 @@
  * - Should NOT import: services, pages
  */
 
-import React, { useRef, useState, useImperativeHandle, forwardRef, useEffect } from 'react';
+import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { useFiles } from '../../hooks/useFiles';
 import { useFolders } from '../../hooks/useFolders';
 import { useFolderNavigation } from '../../hooks/useFolderNavigation';
@@ -37,7 +37,7 @@ const setViewPreference = (view) => {
 };
 
 const FileExplorer = forwardRef((props, ref) => {
-  const { currentFolderId, breadcrumbs, navigateToFolder, navigateBack, navigateToRoot } = useFolderNavigation();
+  const { currentFolderId, breadcrumbs, navigateToFolder, navigateBack } = useFolderNavigation();
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);

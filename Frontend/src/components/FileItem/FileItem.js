@@ -95,7 +95,6 @@ const FileItem = ({
           
           // Wait for render, then check if adjustments needed
           setTimeout(() => {
-            const buttonRect = button.getBoundingClientRect();
             const padding = 12;
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
@@ -141,7 +140,6 @@ const FileItem = ({
               
               setTimeout(() => {
                 const menuRect = menu.getBoundingClientRect();
-                const buttonRect = button.getBoundingClientRect();
                 
                 // Check if menu goes off right edge when positioned below
                 if (menuRect.right > windowWidth - padding) {

@@ -11,8 +11,8 @@ import { authService } from '../../services';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, login } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { user } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const [notifications, setNotifications] = useState({
     email: true,
@@ -113,7 +113,7 @@ const Settings = () => {
         return;
       }
 
-      const response = await authService.changeEmail(emailForm.newEmail, emailForm.password);
+      await authService.changeEmail(emailForm.newEmail, emailForm.password);
       setSuccess(t('emailChangedSuccess') || 'Email changed successfully!');
       setLoading(false);
       setTimeout(() => {
@@ -157,7 +157,7 @@ const Settings = () => {
         return;
       }
 
-      const response = await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      await authService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       setSuccess(t('passwordChangedSuccess') || 'Password changed successfully!');
       setLoading(false);
       

@@ -61,7 +61,6 @@ const FolderItem = ({
           
           // Wait for render, then check if adjustments needed
           setTimeout(() => {
-            const buttonRect = button.getBoundingClientRect();
             const padding = 12;
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;

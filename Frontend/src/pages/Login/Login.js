@@ -46,7 +46,7 @@ const Login = () => {
     try {
       // Use the context login which handles token storage
       // We'll modify the login to accept rememberMe
-      const response = await login(email, password, rememberMe);
+      await login(email, password, rememberMe);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -165,9 +165,9 @@ const Login = () => {
                   />
                   <span>Remember me</span>
                 </label>
-                <a href="#" className="forgot-password" onClick={(e) => { e.preventDefault(); /* TODO: Implement forgot password */ }}>
+                <button type="button" className="forgot-password" onClick={(e) => { e.preventDefault(); /* TODO: Implement forgot password */ }}>
                   Forgot password?
-                </a>
+                </button>
               </div>
               <button 
                 type="submit" 

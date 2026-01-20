@@ -7,6 +7,7 @@ import fileRoutes from "./modules/files/file.routes.js";
 import trashRoutes from "./modules/trash/trash.routes.js";
 import searchRoutes from "./modules/search/search.routes.js";
 import shareRoutes from "./modules/shares/share.routes.js";
+import feedbackRoutes from "./modules/feedback/feedback.routes.js";
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use("/files", fileRoutes);
 router.use("/trash", trashRoutes);
 router.use("/search", searchRoutes);
 router.use("/shares", shareRoutes);
+router.use("/feedback", feedbackRoutes);
 
 export default router;

@@ -140,7 +140,7 @@ export const uploadFile = async (userId, folderId, file) => {
 /**
  * List files in a folder
  */
-export const listFiles = async (userId, folderId) => {
+export const listFiles = async (userId, folderId, starredOnly = false) => {
   let query = supabase
     .from("files")
     .select("*")
@@ -386,6 +386,90 @@ export const moveFile = async (userId, fileId, newFolderId) => {
 
   if (!data) {
     throw new Error("Not found");
+  }
+
+  return data;
+};
+
+/**
+ * Toggle star status for a file
+ */
+export const toggleStarFile = async (userId, fileId) => {
+  // First, check if file exists and is not deleted
+  let query = supabase
+    .from("files")
+    .select("id, is_starred")
+    .eq("id", fileId)
+    .eq("user_id", userId);
+
+  // Try to filter by is_deleted, but handle if column doesn't exist
+  try {
+    query = query.eq("is_deleted", false);
+  } catch (e) {
+    // Column doesn't exist, continue without filter
+  }
+
+  const { data: currentFile, error: fetchError } = await query.single();
+
+  if (fetchError) {
+    // If error is about is_starred column, try without it first
+    if (fetchError.message && fetchError.message.includes("is_starred")) {
+      // Retry query without is_starred to check if file exists
+      let retryQuery = supabase
+        .from("files")
+        .select("id")
+        .eq("id", fileId)
+        .eq("user_id", userId);
+      
+      try {
+        retryQuery = retryQuery.eq("is_deleted", false);
+      } catch (e) {
+        // Column doesn't exist, continue
+      }
+      
+      const { data: retryFile, error: retryError } = await retryQuery.single();
+      
+      if (retryError || !retryFile) {
+        throw new Error("File not found");
+      }
+      
+      // File exists but is_starred column doesn't exist
+      throw new Error("Star functionality not available. Please add is_starred column to files table. See Backend/migrations/004_add_starred_column.sql");
+    }
+    
+    if (fetchError.code === 'PGRST116') {
+      throw new Error("File not found");
+    }
+    
+    throw new Error("File not found");
+  }
+
+  if (!currentFile) {
+    throw new Error("File not found");
+  }
+
+  // Toggle the starred status
+  const newStarredStatus = !(currentFile.is_starred || false);
+
+  // Update the file
+  let updateQuery = supabase
+    .from("files")
+    .update({ is_starred: newStarredStatus })
+    .eq("id", fileId)
+    .eq("user_id", userId);
+
+  const { data, error } = await updateQuery.select().single();
+
+  if (error) {
+    // If error is about missing column, handle gracefully
+    if (error.message && error.message.includes("is_starred")) {
+      throw new Error("Star functionality not available. Please add is_starred column to files table. See Backend/migrations/004_add_starred_column.sql");
+    }
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("File not found");
   }
 
   return data;

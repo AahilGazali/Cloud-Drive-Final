@@ -5,10 +5,10 @@ export const searchByName = async (userId, term) => {
     return { files: [], folders: [] };
   }
 
-  const searchTerm = term.trim();
+  const searchTerm = term.trim().toLowerCase();
 
   try {
-    // Search folders
+    // Search folders - try with is_deleted first
     let foldersQuery = supabase
       .from("folders")
       .select("*")
@@ -16,28 +16,28 @@ export const searchByName = async (userId, term) => {
       .eq("is_deleted", false)
       .ilike("name", `%${searchTerm}%`);
 
-    const { data: folders, error: foldersError } = await foldersQuery;
+    let { data: folders, error: foldersError } = await foldersQuery;
 
     if (foldersError) {
-      // If is_deleted column doesn't exist, retry without it
-      if (foldersError.message && foldersError.message.includes("is_deleted")) {
-        const { data: retryFolders, error: retryError } = await supabase
-          .from("folders")
-          .select("*")
-          .eq("user_id", userId)
-          .ilike("name", `%${searchTerm}%`);
-
-        if (retryError) {
-          console.error("Error searching folders:", retryError);
-          return { files: [], folders: [] };
-        }
-        return { files: [], folders: retryFolders || [] };
+      console.error("Error searching folders (with is_deleted):", foldersError);
+      // If is_deleted column doesn't exist or causes error, retry without it
+      const retryQuery = supabase
+        .from("folders")
+        .select("*")
+        .eq("user_id", userId)
+        .ilike("name", `%${searchTerm}%`);
+      
+      const { data: retryFolders, error: retryError } = await retryQuery;
+      
+      if (retryError) {
+        console.error("Error searching folders (without is_deleted):", retryError);
+        folders = [];
+      } else {
+        folders = retryFolders || [];
       }
-      console.error("Error searching folders:", foldersError);
-      return { files: [], folders: [] };
     }
 
-    // Search files
+    // Search files - try with is_deleted first
     let filesQuery = supabase
       .from("files")
       .select("*")
@@ -45,25 +45,38 @@ export const searchByName = async (userId, term) => {
       .eq("is_deleted", false)
       .ilike("name", `%${searchTerm}%`);
 
-    const { data: files, error: filesError } = await filesQuery;
+    let { data: files, error: filesError } = await filesQuery;
 
     if (filesError) {
-      // If is_deleted column doesn't exist, retry without it
-      if (filesError.message && filesError.message.includes("is_deleted")) {
-        const { data: retryFiles, error: retryError } = await supabase
-          .from("files")
-          .select("*")
-          .eq("user_id", userId)
-          .ilike("name", `%${searchTerm}%`);
-
-        if (retryError) {
-          console.error("Error searching files:", retryError);
-          return { files: [], folders: folders || [] };
-        }
-        return { files: retryFiles || [], folders: folders || [] };
+      console.error("Error searching files (with is_deleted):", filesError);
+      // If is_deleted column doesn't exist or causes error, retry without it
+      const retryQuery = supabase
+        .from("files")
+        .select("*")
+        .eq("user_id", userId)
+        .ilike("name", `%${searchTerm}%`);
+      
+      const { data: retryFiles, error: retryError } = await retryQuery;
+      
+      if (retryError) {
+        console.error("Error searching files (without is_deleted):", retryError);
+        files = [];
+      } else {
+        files = retryFiles || [];
       }
-      console.error("Error searching files:", filesError);
-      return { files: [], folders: folders || [] };
+    }
+
+    console.log("Search term:", searchTerm);
+    console.log("User ID:", userId);
+    console.log("Files found:", files?.length || 0);
+    console.log("Folders found:", folders?.length || 0);
+    
+    // Log first few results for debugging
+    if (files && files.length > 0) {
+      console.log("Sample files:", files.slice(0, 3).map(f => ({ id: f.id, name: f.name })));
+    }
+    if (folders && folders.length > 0) {
+      console.log("Sample folders:", folders.slice(0, 3).map(f => ({ id: f.id, name: f.name })));
     }
 
     return {

@@ -6,6 +6,7 @@ import {
   renameFile,
   moveFile,
   copyFile,
+  toggleStarFile,
 } from "./file.service.js";
 import { success, fail } from "../../utils/response.js";
 
@@ -107,6 +108,22 @@ export const move = async (req, res, next) => {
   } catch (err) {
     if (err.message === "Not found") return fail(res, err.message, 404);
     if (err.message.includes("already in")) return fail(res, err.message, 400);
+    return next(err);
+  }
+};
+
+/**
+ * TOGGLE STAR FILE
+ */
+export const toggleStar = async (req, res, next) => {
+  try {
+    const fileId = req.params.id;
+    const starred = await toggleStarFile(req.user.id, fileId);
+    return success(res, { file: starred });
+  } catch (err) {
+    if (err.message === "Not found" || err.message.includes("not found")) {
+      return fail(res, err.message, 404);
+    }
     return next(err);
   }
 };

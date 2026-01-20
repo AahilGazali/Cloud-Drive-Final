@@ -8,6 +8,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "migrate": "node scripts/run-migration.js",
+    "migrate-starred": "node scripts/run-starred-migration.js",
+    "migrate-feedback": "node scripts/run-feedback-migration.js",
     "setup-db": "node scripts/setup-database.js",
     "check-db": "node scripts/check-db-connection.js",
     "test-email": "node scripts/test-email.js",

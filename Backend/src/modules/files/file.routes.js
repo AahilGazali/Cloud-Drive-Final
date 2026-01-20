@@ -10,6 +10,7 @@ import {
   rename,
   move,
   copy,
+  toggleStar,
 } from "./file.controller.js";
 
 const router = Router();
@@ -37,5 +38,8 @@ router.patch("/:id/move", move);
 
 // POST /api/files/:id/copy
 router.post("/:id/copy", copy);
+
+// PATCH /api/files/:id/star
+router.patch("/:id/star", authenticate, toggleStar);
 
 export default router;

@@ -8,9 +8,18 @@ if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Please check your .env file in the Backend directory.");
 }
 
+// Ensure service role key is used (bypasses RLS)
+const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!serviceRoleKey) {
+  console.error("❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not set!");
+  console.error("The backend requires the service_role key (not anon key) to bypass RLS.");
+  console.error("Get it from: Supabase Dashboard → Settings → API → service_role key");
+}
+
 export const supabase = createClient(
   env.SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY,
+  serviceRoleKey || '', // Empty string will cause errors but prevents undefined issues
   {
     auth: {
       autoRefreshToken: false,

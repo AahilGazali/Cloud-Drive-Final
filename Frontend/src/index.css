@@ -1921,15 +1921,15 @@ body {
 .file-item-grid .file-menu-dropdown,
 .folder-item-grid .file-menu-dropdown {
   position: absolute;
-  right: auto;
-  left: 0;
-  top: 50%;
+  right: 0;
+  left: auto;
+  top: 100%;
   bottom: auto;
-  margin-top: 0;
+  margin-top: 8px;
   margin-bottom: 0;
-  margin-right: 8px;
+  margin-right: 0;
   margin-left: 0;
-  transform: translate(-100%, -50%);
+  transform: none;
   min-width: 220px;
   max-width: 280px;
   padding: 8px 0;
@@ -2341,15 +2341,15 @@ body {
 .file-image-preview .file-menu-dropdown,
 .file-icon-wrapper-grid .file-menu-dropdown {
   position: absolute;
-  right: auto;
-  left: 0;
-  top: 50%;
+  right: 0;
+  left: auto;
+  top: 100%;
   bottom: auto;
-  margin-top: 0;
+  margin-top: 8px;
   margin-bottom: 0;
-  margin-right: 8px;
+  margin-right: 0;
   margin-left: 0;
-  transform: translate(-100%, -50%);
+  transform: none;
   min-width: 220px;
   max-width: 280px;
   padding: 8px 0;
@@ -2598,6 +2598,25 @@ body {
   position: relative;
 }
 
+/* Hide 3 dots menu completely in trash items */
+.trash-item-wrapper .file-menu,
+.trash-item-wrapper .folder-menu,
+.trash-item-wrapper .file-menu-btn,
+.trash-item-wrapper .folder-menu-btn,
+.trash-item-wrapper .file-actions,
+.trash-item-wrapper .folder-actions,
+.trash-item-wrapper .file-actions-grid,
+.trash-item-wrapper .folder-actions-grid,
+.trash-item-wrapper .file-menu-dropdown {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
 .trash-actions {
   position: absolute;
   bottom: 16px;
@@ -2605,9 +2624,10 @@ body {
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity var(--transition-base);
   z-index: 10;
+  pointer-events: auto;
 }
 
 .trash-item-wrapper:hover .trash-actions {
@@ -2626,6 +2646,9 @@ body {
   transition: all var(--transition-base);
   box-shadow: var(--shadow-sm);
   font-family: inherit;
+  pointer-events: auto;
+  z-index: 11;
+  position: relative;
 }
 
 .btn-restore:hover {
@@ -2646,6 +2669,9 @@ body {
   transition: all var(--transition-base);
   box-shadow: var(--shadow-sm);
   font-family: inherit;
+  pointer-events: auto;
+  z-index: 11;
+  position: relative;
 }
 
 .btn-delete-permanent:hover {
@@ -4130,13 +4156,19 @@ body {
   }
 
   .share-modal-overlay {
-    padding: 12px;
+    padding: 30px 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-items: center;
+    justify-content: center;
   }
 
   .share-modal {
-    max-width: 100%;
-    max-height: calc(100vh - 24px);
-    height: auto;
+    width: min(560px, calc(100vw - 24px));
+    max-height: calc(100vh - 60px);
+    min-height: 350px;
+    box-sizing: border-box;
+    margin: auto;
   }
 
   .share-modal-content {
@@ -4245,25 +4277,31 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 99999;
   animation: fadeIn 0.2s ease-out;
-  padding: 20px;
+  padding: 40px 20px;
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .share-modal {
   background: var(--bg-primary);
   border-radius: 8px;
   box-shadow: var(--shadow-xl);
-  width: 100%;
-  max-width: 560px;
-  height: auto;
-  max-height: calc(100vh - 40px);
+  width: min(560px, calc(100vw - 40px));
+  max-height: calc(100vh - 80px);
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
-  margin: 0 auto;
+  margin: auto;
+  position: relative;
+  z-index: 100000;
+  box-sizing: border-box;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 @keyframes slideUp {
@@ -4284,8 +4322,14 @@ body {
   padding: 24px 24px 16px;
   border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
-  flex-grow: 0;
-  gap: 16px;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+  background: var(--bg-primary);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .share-modal-title {
@@ -4299,7 +4343,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-right: 16px;
+  padding-right: 12px;
   line-height: 1.4;
 }
 
@@ -4308,6 +4352,7 @@ body {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+  min-width: fit-content;
 }
 
 .share-header-icon-btn,
@@ -4337,9 +4382,13 @@ body {
   padding: 24px;
   overflow-y: auto;
   overflow-x: hidden;
-  flex: 1 1 auto;
+  flex: 1;
   min-height: 0;
-  max-height: none;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .share-input-section {
@@ -4655,8 +4704,12 @@ body {
   border-top: 1px solid var(--border-light);
   background: var(--bg-primary);
   flex-shrink: 0;
-  flex-grow: 0;
   gap: 12px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .share-copy-link-btn {

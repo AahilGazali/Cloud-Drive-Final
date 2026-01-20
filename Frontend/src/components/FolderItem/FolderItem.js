@@ -27,7 +27,8 @@ const FolderItem = ({
   onStar,
   isSelected = false,
   onSelect,
-  viewMode = 'list' 
+  viewMode = 'list',
+  hideMenu = false 
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -45,45 +46,119 @@ const FolderItem = ({
     const adjustMenuPosition = () => {
       if (menuRef.current && showMenu) {
         const menu = menuRef.current.querySelector('.file-menu-dropdown');
-        if (menu) {
-          const rect = menu.getBoundingClientRect();
-          const windowWidth = window.innerWidth;
-          const windowHeight = window.innerHeight;
+        const button = menuRef.current.querySelector('.folder-menu-btn');
+        
+        if (menu && button) {
+          // Reset styles first
+          menu.style.position = '';
+          menu.style.left = '';
+          menu.style.right = '';
+          menu.style.top = '';
+          menu.style.bottom = '';
+          menu.style.marginTop = '';
+          menu.style.marginBottom = '';
+          menu.style.transform = '';
           
-          // Check if menu goes off right edge
-          if (rect.right > windowWidth) {
-            menu.style.right = 'auto';
-            menu.style.left = '0';
-          }
-          
-          // Check if menu goes off left edge
-          if (rect.left < 0) {
-            menu.style.left = '0';
-            menu.style.right = 'auto';
-          }
-          
-          // Check if menu goes off bottom edge
-          if (rect.bottom > windowHeight) {
-            menu.style.top = 'auto';
-            menu.style.bottom = '100%';
-            menu.style.marginTop = '0';
-            menu.style.marginBottom = '4px';
-          }
+          // Wait for render, then check if adjustments needed
+          setTimeout(() => {
+            const buttonRect = button.getBoundingClientRect();
+            const padding = 12;
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            // For list view, use absolute positioning with smart placement
+            if (viewMode === 'list') {
+              menu.style.position = 'absolute';
+              menu.style.right = '0';
+              menu.style.top = '100%';
+              menu.style.marginTop = '8px';
+              
+              // Check if menu goes off screen after positioning
+              setTimeout(() => {
+                const menuRect = menu.getBoundingClientRect();
+                
+                // Check if menu goes off right edge
+                if (menuRect.right > windowWidth - padding) {
+                  menu.style.right = 'auto';
+                  menu.style.left = '0';
+                }
+                
+                // Check if menu goes off bottom edge
+                if (menuRect.bottom > windowHeight - padding) {
+                  // Position above the button
+                  menu.style.top = 'auto';
+                  menu.style.bottom = '100%';
+                  menu.style.marginTop = '0';
+                  menu.style.marginBottom = '8px';
+                }
+              }, 10);
+            } else {
+              // Grid view positioning - position menu outside the card, to the right or bottom of the button
+              menu.style.position = 'absolute';
+              menu.style.right = '0';
+              menu.style.left = 'auto';
+              menu.style.top = '100%';
+              menu.style.bottom = 'auto';
+              menu.style.marginTop = '8px';
+              menu.style.marginBottom = '0';
+              menu.style.marginRight = '0';
+              menu.style.marginLeft = '0';
+              menu.style.transform = 'none';
+              
+              setTimeout(() => {
+                const menuRect = menu.getBoundingClientRect();
+                
+                // Check if menu goes off right edge when positioned below
+                if (menuRect.right > windowWidth - padding) {
+                  // Align to the right edge
+                  menu.style.right = '0';
+                  menu.style.left = 'auto';
+                }
+                
+                // Check if menu goes off left edge
+                if (menuRect.left < padding) {
+                  // Align to the left edge of the button
+                  menu.style.left = 'auto';
+                  menu.style.right = '0';
+                }
+                
+                // Check if menu goes off bottom edge when positioned below
+                if (menuRect.bottom > windowHeight - padding) {
+                  // Position above the button instead
+                  menu.style.top = 'auto';
+                  menu.style.bottom = '100%';
+                  menu.style.marginTop = '0';
+                  menu.style.marginBottom = '8px';
+                }
+                
+                // Check if menu goes off top edge when positioned above
+                if (menuRect.top < padding && menu.style.bottom === '100%') {
+                  // Go back to below
+                  menu.style.top = '100%';
+                  menu.style.bottom = 'auto';
+                  menu.style.marginTop = '8px';
+                  menu.style.marginBottom = '0';
+                }
+              }, 10);
+            }
+          }, 10);
         }
       }
     };
 
     if (showMenu) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Adjust position after menu is shown
-      setTimeout(adjustMenuPosition, 0);
+      adjustMenuPosition();
       window.addEventListener('resize', adjustMenuPosition);
+      window.addEventListener('scroll', adjustMenuPosition, true);
+      
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         window.removeEventListener('resize', adjustMenuPosition);
+        window.removeEventListener('scroll', adjustMenuPosition, true);
       };
     }
-  }, [showMenu]);
+  }, [showMenu, viewMode]);
 
   const handleClick = (e) => {
     // Don't navigate if clicking on delete button, menu, or checkbox
@@ -166,7 +241,7 @@ const FolderItem = ({
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
               <path d="M10 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6H12L10 4Z" fill="#FFA726"/>
             </svg>
-            {isHovered && (
+            {isHovered && !hideMenu && (
               <div className="folder-actions-grid" onClick={(e) => e.stopPropagation()}>
                 <div className="folder-menu" ref={menuRef}>
                   <button 
@@ -274,7 +349,7 @@ const FolderItem = ({
       <div className="file-date">
         {formatDateTime(folder.updated_at || folder.created_at)}
       </div>
-      {isHovered && (
+      {isHovered && !hideMenu && (
         <div className="folder-actions" onClick={(e) => e.stopPropagation()}>
           <div className="folder-menu" ref={menuRef}>
             <button 

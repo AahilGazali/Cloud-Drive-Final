@@ -15,9 +15,15 @@ const DeleteConfirmModal = ({
 }) => {
   if (!isOpen) return null;
 
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
+  const handleConfirm = async () => {
+    try {
+      await onConfirm();
+      // Don't call onClose here - let the parent component handle it
+      // This allows async operations to complete before modal closes
+    } catch (error) {
+      // Error handling is done in parent component
+      console.error('Confirm action error:', error);
+    }
   };
 
   const handleKeyDown = (e) => {

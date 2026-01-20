@@ -28,7 +28,8 @@ const FileItem = ({
   onStar,
   isSelected = false,
   onSelect,
-  viewMode = 'list' 
+  viewMode = 'list',
+  hideMenu = false 
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -126,57 +127,52 @@ const FileItem = ({
                 }
               }, 10);
             } else {
-              // Grid view positioning - position to overlap the card, to the left of the button
+              // Grid view positioning - position menu outside the card, to the right or bottom of the button
               menu.style.position = 'absolute';
-              menu.style.right = 'auto';
-              menu.style.left = '0';
-              menu.style.top = '50%';
+              menu.style.right = '0';
+              menu.style.left = 'auto';
+              menu.style.top = '100%';
               menu.style.bottom = 'auto';
-              menu.style.marginTop = '0';
+              menu.style.marginTop = '8px';
               menu.style.marginBottom = '0';
-              menu.style.transform = 'translate(-100%, -50%)';
-              menu.style.marginRight = '8px';
+              menu.style.marginRight = '0';
               menu.style.marginLeft = '0';
+              menu.style.transform = 'none';
               
               setTimeout(() => {
                 const menuRect = menu.getBoundingClientRect();
                 const buttonRect = button.getBoundingClientRect();
                 
+                // Check if menu goes off right edge when positioned below
+                if (menuRect.right > windowWidth - padding) {
+                  // Align to the right edge
+                  menu.style.right = '0';
+                  menu.style.left = 'auto';
+                }
+                
                 // Check if menu goes off left edge
                 if (menuRect.left < padding) {
-                  // Position to the right instead
+                  // Align to the left edge of the button
                   menu.style.left = 'auto';
                   menu.style.right = '0';
-                  menu.style.transform = 'translate(0, -50%)';
-                  menu.style.marginRight = '0';
-                  menu.style.marginLeft = '8px';
                 }
                 
-                // Check if menu goes off right edge when positioned to the right
-                if (menuRect.right > windowWidth - padding && menu.style.right === '0') {
-                  // Keep it on the left but adjust
-                  menu.style.left = '0';
-                  menu.style.right = 'auto';
-                  menu.style.transform = 'translate(-100%, -50%)';
-                  menu.style.marginRight = '8px';
-                  menu.style.marginLeft = '0';
-                }
-                
-                // Check if menu goes off top edge
-                if (menuRect.top < padding) {
-                  menu.style.top = '0';
-                  menu.style.transform = menu.style.transform.includes('translateX') 
-                    ? menu.style.transform.replace('-50%', '0') 
-                    : menu.style.transform.replace('translate(-100%, -50%)', 'translate(-100%, 0)').replace('translate(0, -50%)', 'translate(0, 0)');
-                }
-                
-                // Check if menu goes off bottom edge
+                // Check if menu goes off bottom edge when positioned below
                 if (menuRect.bottom > windowHeight - padding) {
+                  // Position above the button instead
                   menu.style.top = 'auto';
-                  menu.style.bottom = '0';
-                  menu.style.transform = menu.style.transform.includes('translateX') 
-                    ? menu.style.transform.replace('-50%', '0') 
-                    : menu.style.transform.replace('translate(-100%, -50%)', 'translate(-100%, 0)').replace('translate(0, -50%)', 'translate(0, 0)');
+                  menu.style.bottom = '100%';
+                  menu.style.marginTop = '0';
+                  menu.style.marginBottom = '8px';
+                }
+                
+                // Check if menu goes off top edge when positioned above
+                if (menuRect.top < padding && menu.style.bottom === '100%') {
+                  // Go back to below
+                  menu.style.top = '100%';
+                  menu.style.bottom = 'auto';
+                  menu.style.marginTop = '8px';
+                  menu.style.marginBottom = '0';
                 }
               }, 10);
             }
@@ -297,7 +293,7 @@ const FileItem = ({
                   className="file-image-thumbnail"
                   onError={() => setImageError(true)}
                 />
-                {isHovered && (
+                {isHovered && !hideMenu && (
                   <div className="file-actions-grid" onClick={(e) => e.stopPropagation()}>
                     <div 
                       className="file-menu" 
@@ -408,7 +404,7 @@ const FileItem = ({
                 {mimeType === 'application/pdf' && (
                   <div className="file-badge pdf-badge">PDF</div>
                 )}
-                {isHovered && (
+                {isHovered && !hideMenu && (
                   <div className="file-actions-grid" onClick={(e) => e.stopPropagation()}>
                     <div 
                       className="file-menu" 
@@ -571,7 +567,7 @@ const FileItem = ({
       <div className="file-date">
         {formatDateTime(file.updated_at || file.created_at)}
       </div>
-      {isHovered && (
+      {isHovered && !hideMenu && (
         <div className="file-actions" onClick={(e) => e.stopPropagation()}>
           <div className="file-menu" ref={menuRef}>
             <button 

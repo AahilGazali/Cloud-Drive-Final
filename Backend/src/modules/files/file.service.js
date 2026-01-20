@@ -110,6 +110,14 @@ export const uploadFile = async (userId, folderId, file) => {
     .single();
 
   if (error) {
+    // Handle RLS (Row Level Security) errors with helpful message
+    if (error.message && error.message.includes("row-level security")) {
+      console.error("❌ RLS Error - Service role key may not be configured correctly");
+      console.error("Check Backend/.env file - SUPABASE_SERVICE_ROLE_KEY must be the service_role key (not anon key)");
+      console.error("See Backend/RLS_FIX_INSTRUCTIONS.md for help");
+      throw new Error("Database permission error. Please check that SUPABASE_SERVICE_ROLE_KEY is set correctly in Backend/.env file. See Backend/RLS_FIX_INSTRUCTIONS.md for help.");
+    }
+    
     // If error is about is_deleted column, retry without it
     if (error.message && error.message.includes("is_deleted")) {
       console.warn("⚠️ is_deleted column not found. Retrying without it. Please add the column using the SQL in QUICK_FIX.sql");
@@ -127,6 +135,10 @@ export const uploadFile = async (userId, folderId, file) => {
         .single();
       
       if (retryError) {
+        // Check for RLS error in retry too
+        if (retryError.message && retryError.message.includes("row-level security")) {
+          throw new Error("Database permission error. Please check that SUPABASE_SERVICE_ROLE_KEY is set correctly in Backend/.env file. See Backend/RLS_FIX_INSTRUCTIONS.md for help.");
+        }
         throw new Error(retryError.message);
       }
       return retryData;

@@ -56,22 +56,46 @@ const Trash = () => {
   };
 
   const handleDelete = (itemId, itemType) => {
-    const item = trashItems.find(i => i.id === itemId && i.type === itemType);
+    console.log('handleDelete called:', { itemId, itemType, trashItems });
+    const item = trashItems.find(i => i.id === itemId && i.resource_type === itemType);
+    console.log('Found item:', item);
     if (item) {
       setDeleteItem({ id: itemId, type: itemType });
       setDeleteItemType(itemType);
-      setDeleteItemName(item.name);
+      setDeleteItemName(item.name || 'this item');
+      setShowDeleteModal(true);
+      console.log('Delete modal should open');
+    } else {
+      // Fallback: if item not found, still allow deletion with provided params
+      console.log('Item not found, using fallback');
+      setDeleteItem({ id: itemId, type: itemType });
+      setDeleteItemType(itemType);
+      setDeleteItemName('this item');
       setShowDeleteModal(true);
     }
   };
   
   const confirmPermanentDelete = async () => {
+    if (!deleteItem) {
+      error('No item selected for deletion');
+      setShowDeleteModal(false);
+      return;
+    }
+    
+    console.log('confirmPermanentDelete called:', deleteItem);
     try {
+      console.log('Calling permanentlyDelete with:', deleteItem.id, deleteItem.type);
       await permanentlyDelete(deleteItem.id, deleteItem.type);
+      console.log('Delete successful');
       success('Item permanently deleted');
       setShowDeleteModal(false);
+      setDeleteItem(null);
+      setDeleteItemName('');
+      setDeleteItemType('file');
     } catch (err) {
-      error(`Failed to delete: ${err.message}`);
+      console.error('Delete error:', err);
+      error(`Failed to delete: ${err.message || 'Unknown error'}`);
+      // Don't close modal on error so user can try again
     }
   };
 
@@ -111,25 +135,35 @@ const Trash = () => {
                 <FolderItem
                   folder={item}
                   onNavigate={() => {}} // Disabled in trash
+                  hideMenu={true}
                 />
               ) : (
               <FileItem
                 file={item}
                 onDownload={() => {}} // Disabled in trash
                 onDelete={() => {}} // Disabled in trash
+                hideMenu={true}
               />
             )}
               <div className="trash-actions">
                 <button
                   className="btn-restore"
-                  onClick={() => handleRestore(item.id, item.resource_type)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleRestore(item.id, item.resource_type);
+                  }}
                   title="Restore"
                 >
                   Restore
                 </button>
                 <button
                   className="btn-delete-permanent"
-                  onClick={() => handleDelete(item.id, item.resource_type)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete(item.id, item.resource_type);
+                  }}
                   title="Delete permanently"
                 >
                   Delete Forever

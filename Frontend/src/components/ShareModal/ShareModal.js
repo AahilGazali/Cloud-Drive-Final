@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { sharesService } from '../../services';
 
@@ -29,6 +30,15 @@ const ShareModal = ({
 
   useEffect(() => {
     if (isOpen && item) {
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+      
+      // Scroll overlay to top to ensure modal appears centered
+      const overlay = document.querySelector('.share-modal-overlay');
+      if (overlay) {
+        overlay.scrollTop = 0;
+      }
+      
       // Reset state when modal opens
       setEmailInput('');
       setGeneralAccess('restricted');
@@ -50,10 +60,18 @@ const ShareModal = ({
       // Generate share link
       generateShareLink();
     } else {
+      // Restore body scroll when modal closes
+      document.body.style.overflow = '';
+      
       // Reset when modal closes
       setPeopleWithAccess([]);
       setShareLink('');
     }
+    
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, item, user]);
 
   const loadShares = async () => {
@@ -350,7 +368,8 @@ const ShareModal = ({
 
   if (!isOpen || !item) return null;
 
-  return (
+  // Render modal using Portal to ensure it's outside any constrained containers
+  return ReactDOM.createPortal(
     <div className="share-modal-overlay" onClick={onClose}>
       <div className="share-modal" onClick={(e) => e.stopPropagation()}>
         <div className="share-modal-header">
@@ -493,7 +512,8 @@ const ShareModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

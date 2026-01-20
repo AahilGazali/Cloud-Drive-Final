@@ -37,51 +37,51 @@ export const formatDate = (dateString) => {
 export const formatDateTime = (dateString) => {
   if (!dateString) return '—';
   
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  
-  // If less than 1 minute ago
-  if (diffMins < 1) {
-    return 'Just now';
-  }
-  
-  // If less than 1 hour ago
-  if (diffMins < 60) {
-    return `${diffMins} min ago`;
-  }
-  
-  // If less than 24 hours ago
-  if (diffHours < 24) {
-    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  }
-  
-  // If less than 7 days ago
-  if (diffDays < 7) {
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  }
-  
-  // If same year, show month and day
-  if (date.getFullYear() === now.getFullYear()) {
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '—';
+    }
+    
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    // If less than 7 days ago, show relative time with date
+    if (diffDays < 7 && diffDays >= 0) {
+      // Show both date and relative time for recent items
+      if (diffDays === 0) {
+        // Today - show time
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      } else if (diffDays === 1) {
+        // Yesterday
+        return 'Yesterday';
+      } else {
+        // Show date for items within a week
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        });
+      }
+    }
+    
+    // For older items, show full date (month, day, year)
     return date.toLocaleDateString('en-US', {
+      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
     });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return '—';
   }
-  
-  // Otherwise show full date
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 /**

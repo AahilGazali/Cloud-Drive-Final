@@ -1694,11 +1694,14 @@ body {
 }
 
 .file-header-date {
-  width: 150px;
+  width: 180px;
+  min-width: 180px;
   flex-shrink: 0;
   text-align: right;
   color: var(--text-secondary);
   font-size: 13px;
+  display: block !important;
+  visibility: visible !important;
 }
 
 .file-header-actions {
@@ -1854,11 +1857,14 @@ body {
 }
 
 .file-date {
-  width: 150px;
+  width: 180px;
+  min-width: 180px;
   flex-shrink: 0;
   text-align: right;
   color: var(--text-secondary);
   font-size: 13px;
+  display: block !important;
+  visibility: visible !important;
 }
 
 .file-actions,

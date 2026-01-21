@@ -1,4 +1,5 @@
 import { supabase } from "../../config/supabase.js";
+import { query } from "../../config/db.js";
 import crypto from "crypto";
 
 /**
@@ -85,68 +86,94 @@ export const uploadFile = async (userId, folderId, file) => {
     throw new Error(uploadError.message);
   }
 
-  // 2️⃣ Save metadata in database
-  // Try with is_deleted, fallback without it if column doesn't exist
-  let insertData = {
-    name: file.originalname,
-    path: filePath,
-    size: file.size,
-    mime_type: detectedMime,
-    user_id: userId,
-    folder_id: folderId ?? null,
-  };
+  // 2️⃣ Save metadata in database using direct PostgreSQL (bypasses RLS)
+  // This method works once RUN_THIS_SQL_IN_SUPABASE.sql is executed in Supabase
+  console.log(`📁 Inserting file record for user ${userId}`);
+  console.log(`   File: ${file.originalname}, Size: ${file.size}, Path: ${filePath}`);
   
-  // Try to include is_deleted, but handle if column doesn't exist
+  // Use direct PostgreSQL query first (most reliable once SQL is run)
+  const insertQuery = `
+    INSERT INTO public.files (name, path, size, mime_type, user_id, folder_id, is_deleted)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *
+  `;
+  
   try {
-    insertData.is_deleted = false;
-  } catch (e) {
-    // Column doesn't exist, continue without it
-  }
-
-  const { data, error } = await supabase
-    .from("files")
-    .insert(insertData)
-    .select()
-    .single();
-
-  if (error) {
-    // Handle RLS (Row Level Security) errors with helpful message
-    if (error.message && error.message.includes("row-level security")) {
-      console.error("❌ RLS Error - Service role key may not be configured correctly");
-      console.error("Check Backend/.env file - SUPABASE_SERVICE_ROLE_KEY must be the service_role key (not anon key)");
-      console.error("See Backend/RLS_FIX_INSTRUCTIONS.md for help");
-      throw new Error("Database permission error. Please check that SUPABASE_SERVICE_ROLE_KEY is set correctly in Backend/.env file. See Backend/RLS_FIX_INSTRUCTIONS.md for help.");
+    console.log(`   Executing direct PostgreSQL query (bypasses RLS if SQL is run)...`);
+    const { rows } = await query(insertQuery, [
+      file.originalname,
+      filePath,
+      file.size,
+      detectedMime,
+      userId,
+      folderId ?? null,
+      false
+    ]);
+    
+    if (rows && rows.length > 0) {
+      console.log(`✅ File record inserted successfully: ${rows[0].id}`);
+      return rows[0];
     }
     
-    // If error is about is_deleted column, retry without it
-    if (error.message && error.message.includes("is_deleted")) {
-      console.warn("⚠️ is_deleted column not found. Retrying without it. Please add the column using the SQL in QUICK_FIX.sql");
-      const { data: retryData, error: retryError } = await supabase
-        .from("files")
-        .insert({
-          name: file.originalname,
-          path: filePath,
-          size: file.size,
-          mime_type: detectedMime,
-          user_id: userId,
-          folder_id: folderId ?? null,
-        })
-        .select()
-        .single();
+    throw new Error("Failed to insert file record");
+  } catch (dbError) {
+    // If is_deleted column doesn't exist, retry without it
+    if (dbError.message && dbError.message.includes("is_deleted")) {
+      console.warn("⚠️ is_deleted column not found. Retrying without it.");
+      const retryQuery = `
+        INSERT INTO public.files (name, path, size, mime_type, user_id, folder_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `;
       
-      if (retryError) {
-        // Check for RLS error in retry too
-        if (retryError.message && retryError.message.includes("row-level security")) {
-          throw new Error("Database permission error. Please check that SUPABASE_SERVICE_ROLE_KEY is set correctly in Backend/.env file. See Backend/RLS_FIX_INSTRUCTIONS.md for help.");
+      try {
+        const { rows } = await query(retryQuery, [
+          file.originalname,
+          filePath,
+          file.size,
+          detectedMime,
+          userId,
+          folderId ?? null
+        ]);
+        
+        if (rows && rows.length > 0) {
+          console.log(`✅ File record inserted successfully (without is_deleted): ${rows[0].id}`);
+          return rows[0];
         }
-        throw new Error(retryError.message);
+      } catch (retryError) {
+        // If retry also fails with RLS, show the error
+        if (retryError.message && (
+          retryError.message.includes("row-level security") ||
+          retryError.message.includes("new row violates row-level security") ||
+          retryError.message.includes("RLS")
+        )) {
+          console.error("❌ RLS error detected!");
+          console.error("   SOLUTION: Run RUN_THIS_SQL_IN_SUPABASE.sql in Supabase SQL Editor");
+          console.error("   See FIX_INSTRUCTIONS.md for step-by-step guide");
+          throw new Error("Database setup required. Please run RUN_THIS_SQL_IN_SUPABASE.sql in Supabase SQL Editor, then restart backend.");
+        }
+        throw retryError;
       }
-      return retryData;
     }
-    throw new Error(error.message);
+    
+    // Check if it's an RLS error
+    if (dbError.message && (
+      dbError.message.includes("row-level security") ||
+      dbError.message.includes("new row violates row-level security") ||
+      dbError.message.includes("RLS")
+    )) {
+      console.error("❌ RLS error detected!");
+      console.error("   SOLUTION: Run RUN_THIS_SQL_IN_SUPABASE.sql in Supabase SQL Editor");
+      console.error("   1. Go to Supabase Dashboard → SQL Editor");
+      console.error("   2. Open Backend/RUN_THIS_SQL_IN_SUPABASE.sql");
+      console.error("   3. Copy ALL contents and paste into SQL Editor");
+      console.error("   4. Click 'Run' button");
+      console.error("   5. Restart backend server");
+      throw new Error("Database setup required. Please run RUN_THIS_SQL_IN_SUPABASE.sql in Supabase SQL Editor (see FIX_INSTRUCTIONS.md), then restart backend.");
+    }
+    
+    throw new Error(dbError.message || "Failed to save file metadata");
   }
-
-  return data;
 };
 
 /**
@@ -543,52 +570,53 @@ export const copyFile = async (userId, fileId, targetFolderId = null) => {
     throw new Error(uploadError.message);
   }
 
-  // Create database record for the copy
-  let insertData = {
-    name: newFileName,
-    path: newPath,
-    size: originalFile.size,
-    mime_type: originalFile.mime_type,
-    user_id: userId,
-    folder_id: targetFolderId ?? null,
-  };
-
-  // Try to include is_deleted
+  // Create database record for the copy using direct PostgreSQL query (bypasses RLS)
+  const insertQuery = `
+    INSERT INTO public.files (name, path, size, mime_type, user_id, folder_id, is_deleted)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *
+  `;
+  
   try {
-    insertData.is_deleted = false;
-  } catch (e) {
-    // Column doesn't exist, continue without it
-  }
-
-  const { data: newFile, error: insertError } = await supabase
-    .from("files")
-    .insert(insertData)
-    .select()
-    .single();
-
-  if (insertError) {
-    // If error is about is_deleted column, retry without it
-    if (insertError.message && insertError.message.includes("is_deleted")) {
-      const { data: retryData, error: retryError } = await supabase
-        .from("files")
-        .insert({
-          name: newFileName,
-          path: newPath,
-          size: originalFile.size,
-          mime_type: originalFile.mime_type,
-          user_id: userId,
-          folder_id: targetFolderId ?? null,
-        })
-        .select()
-        .single();
-
-      if (retryError) {
-        throw new Error(retryError.message);
-      }
-      return retryData;
+    const { rows } = await query(insertQuery, [
+      newFileName,
+      newPath,
+      originalFile.size,
+      originalFile.mime_type,
+      userId,
+      targetFolderId ?? null,
+      false
+    ]);
+    
+    if (!rows || rows.length === 0) {
+      throw new Error("Failed to insert file record");
     }
-    throw new Error(insertError.message);
+    
+    return rows[0];
+  } catch (dbError) {
+    // If is_deleted column doesn't exist, retry without it
+    if (dbError.message && dbError.message.includes("is_deleted")) {
+      const retryQuery = `
+        INSERT INTO public.files (name, path, size, mime_type, user_id, folder_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `;
+      
+      const { rows } = await query(retryQuery, [
+        newFileName,
+        newPath,
+        originalFile.size,
+        originalFile.mime_type,
+        userId,
+        targetFolderId ?? null
+      ]);
+      
+      if (!rows || rows.length === 0) {
+        throw new Error("Failed to insert file record");
+      }
+      
+      return rows[0];
+    }
+    throw new Error(dbError.message || "Failed to save file copy");
   }
-
-  return newFile;
 };

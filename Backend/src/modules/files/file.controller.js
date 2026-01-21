@@ -22,10 +22,24 @@ export const upload = async (req, res, next) => {
       return fail(res, "No file uploaded", 400);
     }
 
+    console.log(`📤 Upload request from user: ${req.user.id}`);
     const uploaded = await uploadFile(req.user.id, folderId, file);
+    console.log(`✅ Upload successful for user: ${req.user.id}`);
     return success(res, { file: uploaded }, 201);
   } catch (err) {
-    return next(err);
+    console.error(`❌ Upload failed for user ${req.user.id}:`, err.message);
+    
+    // If it's a database setup error, show helpful message
+    if (err.message && err.message.includes("Database setup required")) {
+      return fail(res, "Upload failed: Database configuration required. Please run RUN_THIS_SQL_IN_SUPABASE.sql in Supabase SQL Editor (see DO_THIS_NOW.md), then restart backend.", 500);
+    }
+    
+    // Return user-friendly error message (hide technical details)
+    const userMessage = err.message && err.message.includes("Upload failed") 
+      ? err.message 
+      : "Upload failed. Please try again.";
+    
+    return fail(res, userMessage, 500);
   }
 };
 
